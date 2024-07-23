@@ -1,0 +1,123 @@
+frameworkVersion: "^4.1.12"
+
+service: hello-retail-product-photos-receive
+
+custom:
+  stage: dev
+
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+  memorySize: ${env:MEMORY_SIZE}
+  stage: dev
+  iam:
+    role:
+      statements: 
+        - Effect: Allow
+          Action: 
+            - dynamodb:PutItem
+          Resource: !Sub "arn:aws:dynamodb:ap-northeast-2:590183717745:table/${MetricsTablePhotoFail}"
+
+functions:
+  receive:
+    role:
+      Fn::GetAtt: [ ReceiveRole, Arn ]
+    handler: receive.handler
+    timeout: 29
+    environment:
+      IMAGE_BUCKET: hello-retail.biz
+      ENDPOINT: https://o58xud4yag.execute-api.ap-northeast-2.amazonaws.com/dev/sms
+      TABLE_PHOTO_ASSIGNMENTS_NAME:
+        Fn::ImportValue: hello-retail-product-photos-data:dev:PhotoAssignmentsTableName:1
+    events:
+      - http:
+          path: sms
+          method: post
+          cors: true
+
+resources:
+  Resources:
+    MetricsTablePhotoReceive:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: metrics.photo-receive
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+
+   
+    ReceiveLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: '/aws/lambda/hello-retail-product-photos-receive-dev-receive'
+        RetentionInDays: 7
+    
+    ReceiveRole: 
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: devReceiveRole1
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: lambda.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        Policies:
+          - PolicyName: CreateAndWriteToLogStream
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'logs:CreateLogStream'
+                  Resource:
+                    Fn::GetAtt: [ ReceiveLogGroup, Arn ]
+                - Effect: Allow
+                  Action:
+                    - 'logs:PutLogEvents'
+                  Resource:
+                    Fn::Join:
+                      - ':'
+                      - - Fn::GetAtt: [ ReceiveLogGroup, Arn ]
+                        - '*'
+          - ${file(./../productPhotos.yml):getPhotoAssignment}
+          - PolicyName: StoreImageInBucket
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 's3:putObject'
+                  Resource: arn:aws:s3:::hello-retail.biz/i/p/*
+          - PolicyName: SucceedActivityTask
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'states:SendTaskSuccess'
+                  Resource: arn:aws:states:ap-northeast-2:${env:ACCOUNT_ID}:activity:dev-hello-retail-product-photos-receive
+  Outputs:
+    ReceiveLambdaName:
+      Description: The Name of the Photo Assignments Receive Lambda
+      Value:
+        Ref: ReceiveLambdaFunction
+      Export:
+        Name: hello-retail-product-photos-receive:dev:PhotoAssignmentsReceiveLambdaName:1
+    ReceiveLambdaArn:
+      Description: The Name of the Photo Assignments Receive Lambda
+      Value:
+        'Fn::GetAtt': [ ReceiveLambdaFunction, Arn ]
+      Export:
+        Name: hello-retail-product-photos-receive:dev:PhotoAssignmentsReceiveLambdaArn:1

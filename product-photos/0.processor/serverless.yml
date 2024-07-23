@@ -1,0 +1,111 @@
+frameworkVersion: "^4.1.12"
+
+service: hello-retail-product-photos
+
+custom:
+  stage: dev
+  
+  retailStreamVersion: 1
+  
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+  memorySize: ${env:MEMORY_SIZE}
+  stage: dev
+  iam:
+    role:
+      statements: # permissions for all of your functions can be set here
+        - Effect: Allow
+          Action: # Gives permission to DynamoDB tables in a specific region
+            - dynamodb:PutItem
+          Resource: !Sub "arn:aws:dynamodb:ap-northeast-2:590183717745:table/${MetricsTablePhotoFail}"
+
+functions:
+  processor:
+    role:
+      'Fn::GetAtt': [ ProcessorRole, Arn ]
+    handler: processor.handler  # Change this to the correct handler function name
+    environment:
+      STAGE: dev
+      STEP_FUNCTION:
+        'Fn::ImportValue': hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionArn:1
+      TABLE_PHOTO_REGISTRATIONS_NAME:
+        'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoRegistrationsTableName:1
+      PRODUCT_CATALOG_TABLE_ARN: arn:aws:dynamodb:ap-northeast-2:590183717745:table/dev-ProductCatalog-1/stream/2024-07-22T09:29:26.799
+        
+    events:
+      - stream:
+          type: dynamodb
+          arn: arn:aws:dynamodb:ap-northeast-2:590183717745:table/dev-ProductCatalog-1/stream/2024-07-22T09:29:26.799
+            
+          
+
+   
+
+resources:
+  Resources:
+    MetricsTablePhotoProcessor:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: metrics.photo-processor
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES  # You can choose NEW_IMAGE, OLD_IMAGE, NEW_AND_OLD_IMAGES based on your needs
+
+    # Log Group
+    ProcessorLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: '/aws/lambda/hello-retail-product-photos-dev-processor'
+        RetentionInDays: 7
+
+    # Role
+    ProcessorRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: devProductPhotosProcessor1
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: lambda.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        Policies:
+          - PolicyName: CreateAndWriteToLogStream
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'logs:CreateLogStream'
+                  Resource:
+                    'Fn::GetAtt': [ ProcessorLogGroup, Arn ]
+                - Effect: Allow
+                  Action:
+                    - 'logs:PutLogEvents'
+                  Resource:
+                    'Fn::Join':
+                      - ':'
+                      - - 'Fn::GetAtt': [ ProcessorLogGroup, Arn ]
+                        - '*'
+          - PolicyName: ExecuteStepFunction
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'states:StartExecution'
+                  Resource:
+                    'Fn::ImportValue': hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionArn:1

@@ -1,0 +1,71 @@
+frameworkVersion: "^4.1.12"
+
+service: hello-retail-product-photos-process
+
+custom:
+  stage: dev
+  retailStreamVersion: 1
+
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+
+resources:
+  Resources:
+    # Activity
+    ReceiveActivity:
+      Type: 'AWS::StepFunctions::Activity'
+      Properties:
+        Name: dev-hello-retail-product-photos-receive
+    # Role
+    StepFunctionRole:
+        Type: AWS::IAM::Role
+        Properties:
+          Path: /
+          RoleName: devProductPhotosStepFunction1
+          AssumeRolePolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: states.ap-northeast-2.amazonaws.com
+          ManagedPolicyArns:
+            - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+            - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+          Policies:
+            - PolicyName: InvokeLambdas
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - 'lambda:InvokeFunction'
+                    Resource:
+                      - 'Fn::ImportValue': hello-retail-product-photos-assign:dev:PhotoAssignmentsAssignLambdaArn:1
+                      - 'Fn::ImportValue': hello-retail-product-photos-receive:dev:PhotoAssignmentsReceiveLambdaArn:1
+                      - 'Fn::ImportValue': hello-retail-product-photos-fail:dev:PhotoAssignmentsFailLambdaArn:1
+                      - 'Fn::ImportValue': hello-retail-product-photos-success:dev:PhotoAssignmentsSuccessLambdaArn:1
+                      - 'Fn::ImportValue': hello-retail-product-photos-report:dev:PhotoAssignmentsReportLambdaArn:1
+    # Step Function
+    StepFunction:
+      Type: 'AWS::StepFunctions::StateMachine'
+      Properties:
+        DefinitionString: '${file(./acquirePhoto.js):shim}'
+        RoleArn:
+          'Fn::GetAtt': [ StepFunctionRole, Arn ]
+  Outputs:
+    PhotoAssignmentsStepFunctionName:
+      Description: The name of the Photo Assignments Step Function
+      Value:
+        'Fn::GetAtt': [StepFunction, Name]
+      Export:
+        Name: hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionName:1
+    PhotoAssignmentsStepFunctionArn:
+      Description: The ARN of the Photo Assignments Step Function
+      Value:
+        Ref: StepFunction
+      Export:
+        Name: hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionArn:1

@@ -1,0 +1,119 @@
+#TODO REMOVE AND REPLACE
+bucket: hello-retail-590183717745.biz
+bucketArn: arn:aws:s3:::hello-retail-590183717745.biz
+
+# Project
+name: hello-retail-product-photos
+productPhotosVersion: 1
+
+# Data
+dataName: hello-retail-product-photos-data
+exportPhotoRegistrationsTableName: hello-retail-product-photos-data:dev:PhotoRegistrationsTableName:1
+exportPhotoRegistrationsTableArn: hello-retail-product-photos-data:dev:PhotoRegistrationsTableArn:1
+exportPhotoRegistrationsTableAssignmentsIndexArn: hello-retail-product-photos-data:dev:PhotoRegistrationsTableAssignmentsIndexArn:1
+exportPhotoAssignmentsTableName: hello-retail-product-photos-data:dev:PhotoAssignmentsTableName:1
+exportPhotoAssignmentsTableArn: hello-retail-product-photos-data:dev:PhotoAssignmentsTableArn:1
+
+# Lambdas
+processorName: hello-retail-product-photos
+
+assignName: hello-retail-product-photos-assign
+exportPhotoAssignmentsAssignLambdaName: hello-retail-product-photos-assign:dev:PhotoAssignmentsAssignLambdaName:1
+exportPhotoAssignmentsAssignLambdaArn: hello-retail-product-photos-assign:dev:PhotoAssignmentsAssignLambdaArn:1
+
+receiveName: hello-retail-product-photos-receive
+exportPhotoAssignmentsReceiveLambdaName: hello-retail-product-photos-receive:dev:PhotoAssignmentsReceiveLambdaName:1
+exportPhotoAssignmentsReceiveLambdaArn: hello-retail-product-photos-receive:dev:PhotoAssignmentsReceiveLambdaArn:1
+
+failName: hello-retail-product-photos-fail
+exportPhotoAssignmentsFailLambdaName: hello-retail-product-photos-fail:dev:PhotoAssignmentsFailLambdaName:1
+exportPhotoAssignmentsFailLambdaArn: hello-retail-product-photos-fail:dev:PhotoAssignmentsFailLambdaArn:1
+
+successName: hello-retail-product-photos-success
+exportPhotoAssignmentsSuccessLambdaName: hello-retail-product-photos-success:dev:PhotoAssignmentsSuccessLambdaName:1
+exportPhotoAssignmentsSuccessLambdaArn: hello-retail-product-photos-success:dev:PhotoAssignmentsSuccessLambdaArn:1
+
+reportName: hello-retail-product-photos-report
+exportPhotoAssignmentsReportLambdaName: hello-retail-product-photos-report:dev:PhotoAssignmentsReportLambdaName:1
+exportPhotoAssignmentsReportLambdaArn: hello-retail-product-photos-report:dev:PhotoAssignmentsReportLambdaArn:1
+
+# Activities
+receiveActivityName: dev-hello-retail-product-photos-receive
+receiveActivityArn: arn:aws:states:ap-northeast-2:${env:ACCOUNT_ID}:activity:dev-hello-retail-product-photos-receive
+
+# Step Function
+processName: hello-retail-product-photos-process
+exportPhotoAssignmentsStepFunctionName: hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionName:1
+exportPhotoAssignmentsStepFunctionArn: hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionArn:1
+
+# Policies
+getPhotoRegistrations:
+  PolicyName: GetPhotoRegistrations
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:GetItem'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoRegistrationsTableArn:1
+putPhotoRegistrations:
+  PolicyName: PutPhotoRegistrations
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:PutItem'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoRegistrationsTableArn:1
+updatePhotoRegistrations:
+  PolicyName: UpdatePhotoRegistrations
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:UpdateItem'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoRegistrationsTableArn:1
+queryPhotoRegistrationsAssignmentsIndex:
+  PolicyName: QueryPhotoRegistrationsAssignmentsIndex
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:Query'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoRegistrationsTableAssignmentsIndexArn:1
+getPhotoAssignment:
+  PolicyName: GetPhotoAssignment
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:GetItem'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoAssignmentsTableArn:1
+updatePhotoAssignment:
+  PolicyName: UpdatePhotoAssignment
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:UpdateItem'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoAssignmentsTableArn:1
+deletePhotoAssignment:
+  PolicyName: DeletePhotoAssignment
+  PolicyDocument:
+    Version: '2012-10-17'
+    Statement:
+      -  Effect: Allow
+         Action:
+           - 'dynamodb:DeleteItem'
+         Resource:
+          'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoAssignmentsTableArn:1

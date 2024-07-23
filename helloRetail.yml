@@ -1,0 +1,8 @@
+# Services must include this file as follows:
+# ```
+# custom:
+#   helloRetail: ${file(../helloRetail.yml)}}
+# ```
+# Top Level Project
+name: hello-retail
+deploymentBucket: com.cclab.cclab.serverless.ap-northeast-2

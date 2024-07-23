@@ -1,0 +1,18 @@
+{
+  "name": "hello-retail-event-writer",
+  "version": "0.0.1",
+  "description": "Service to write events to a kinesis stream.",
+  "main": "eventWriterApi.js",
+  "scripts": {},
+  "author": "Nordstrom",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Nordstrom/hello-retail/issues"
+  },
+  "dependencies": {
+    "ajv": "^4.10.4",
+    "aws-sdk": "^2.1659.0",
+    "uuid": "^8.1.0"
+  },
+  "proxy": "http://localhost:7702"
+}

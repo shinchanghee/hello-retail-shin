@@ -1,0 +1,115 @@
+frameworkVersion: "^4.1.12"
+
+service: hello-retail-product-photos-assign
+
+custom:
+  stage: dev
+
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+  stage: dev
+  memorySize: ${env:MEMORY_SIZE}
+  timeout: 65
+  iam:
+    role:
+      statements: # permissions for all of your functions can be set here
+        - Effect: Allow
+          Action: # Gives permission to DynamoDB tables in a specific region
+            - dynamodb:PutItem
+            - dynamodb:*
+          Resource: !Sub "arn:aws:dynamodb:ap-northeast-2:590183717745:table/metrics.photo-assign"
+
+functions:
+  assign:
+    role:
+      'Fn::GetAtt': [ AssignRole, Arn ]
+    handler: assign.handler
+    environment:
+      ACTIVITY_RECEIVE_ARN: arn:aws:states:ap-northeast-2:${env:ACCOUNT_ID}:activity:dev-hello-retail-product-photos-receive
+      TABLE_PHOTO_ASSIGNMENTS_NAME:
+        Fn::ImportValue: hello-retail-product-photos-data:dev:PhotoAssignmentsTableName:1
+      TABLE_PHOTO_REGISTRATIONS_NAME:
+        Fn::ImportValue: hello-retail-product-photos-data:dev:PhotoRegistrationsTableName:1
+
+resources:
+  Resources:
+    MetricsTablePhotoAssign:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: metrics.photo-assign
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+
+    # Log Group
+    AssignLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: '/aws/lambda/hello-retail-product-photos-assign-dev-assign'
+        RetentionInDays: 7
+    # Role
+    AssignRole: # role for the assignment creation lambda
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: devProductPhotosAssign1
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: lambda.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        Policies:
+          - PolicyName: CreateAndWriteToLogStream
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'logs:CreateLogStream'
+                  Resource:
+                    'Fn::GetAtt': [ AssignLogGroup, Arn ]
+                - Effect: Allow
+                  Action:
+                    - 'logs:PutLogEvents'
+                  Resource:
+                    'Fn::Join':
+                      - ':'
+                      - - 'Fn::GetAtt': [ AssignLogGroup, Arn ]
+                        - '*'
+          - PolicyName: GetAndFailActivityTask
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'states:GetActivityTask'
+                    - 'states:SendTaskFailure'
+                  Resource: arn:aws:states:ap-northeast-2:${env:ACCOUNT_ID}:activity:dev-hello-retail-product-photos-receive
+          - ${file(./../productPhotos.yml):updatePhotoAssignment}
+          - ${file(./../productPhotos.yml):queryPhotoRegistrationsAssignmentsIndex}
+          - ${file(./../productPhotos.yml):updatePhotoRegistrations}
+  Outputs:
+    AssignLambdaName:
+      Description: The Name of the Photo Assignments Assign Lambda
+      Value:
+        Ref: AssignLambdaFunction
+      Export:
+        Name: hello-retail-product-photos-assign:dev:PhotoAssignmentsAssignLambdaName:1
+    AssignLambdaArn:
+      Description: The Name of the Photo Assignments Assign Lambda
+      Value:
+        'Fn::GetAtt': [ AssignLambdaFunction, Arn ]
+      Export:
+        Name: hello-retail-product-photos-assign:dev:PhotoAssignmentsAssignLambdaArn:1

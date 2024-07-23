@@ -1,0 +1,118 @@
+frameworkVersion: "^4.1.12"
+
+service: hello-retail-stream
+
+custom:
+  stage: dev
+  # Retail Stream Versions & Exports
+  # WARNING: each project that uses these will have to define the following two attributes in its serverless.yml: (custom.retailStreamVersion, custom.retailStream)
+  retailStreamVersion: 1 # The version of this service to depend upon
+   # externally, use `${file(~/retail-stream/serverless.yml)}`, replacing the `~` therein with the appropriate relative reference [e.g. '..' or '../..']
+  # Exports
+  exportRetailStreamName: hello-retail-stream:dev:RetailStreamName:1
+  exportRetailStreamArn: hello-retail-stream:dev:RetailStreamArn:1
+  exportRetailStreamWriterArn: hello-retail-stream:dev:RetailStreamWriterArn:1
+  exportRetailStreamReaderArn: hello-retail-stream:dev:RetailStreamReaderArn:1
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+  stage: dev
+  environment:
+    STAGE: dev
+
+resources:
+  Resources:
+    # Retail Stream
+    RetailStream:
+      Type: 'AWS::Kinesis::Stream'
+      Properties:
+        Name: devRetailStream
+        ShardCount: 10
+
+    # Role for direct producers
+    RetailStreamWriter:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: devRetailStreamWriter1
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: # role ARNs that are allowed to write to the Retail stream
+                  - !Sub 'arn:aws:iam::590183717745:root'
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        Policies:
+          - PolicyName: WriteToStream
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                -  Effect: Allow
+                   Action:
+                     - 'kinesis:DescribeStream'
+                     - 'kinesis:PutRecord'
+                     - 'kinesis:PutRecords'
+                   Resource:
+                     Fn::GetAtt: [ RetailStream, Arn ]
+    # Role for direct consumers
+    RetailStreamReader:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: devRetailStreamReader1
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: # role ARNs that are allowed to read from the Retail stream
+                  - !Sub 'arn:aws:iam::590183717745:root'
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        Policies:
+          - PolicyName: ReadFromStream
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                -  Effect: Allow
+                   Action:
+                     - 'kinesis:DescribeStream'
+                     - 'kinesis:GetRecords'
+                     - 'kinesis:GetShardIterator'
+                     - 'kinesis:ListStreams'
+                   Resource:
+                     Fn::GetAtt: [ RetailStream, Arn ]
+
+  Outputs:
+    RetailStreamName:
+      Description: The Name of the Retail Stream
+      Value:
+        Ref: RetailStream
+      Export:
+        Name: hello-retail-stream:dev:RetailStreamName:1
+    RetailStreamArn:
+      Description: The ARN for the Retail Stream
+      Value:
+        Fn::GetAtt: [ RetailStream, Arn ]
+      Export:
+        Name: hello-retail-stream:dev:RetailStreamArn:1
+    RetailStreamWriterArn:
+      Description: The ARN for the defined Role that can write events to the RetailStream
+      Value:
+        Fn::GetAtt: [ RetailStreamWriter, Arn ]
+      Export:
+        Name: hello-retail-stream:dev:RetailStreamWriterArn:1
+    RetailStreamReaderArn:
+      Description: The ARN for the defined Role that can read events from the RetailStream
+      Value:
+        Fn::GetAtt: [ RetailStreamReader, Arn ]
+      Export:
+        Name: hello-retail-stream:dev:RetailStreamReaderArn:1

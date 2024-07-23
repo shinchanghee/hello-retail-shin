@@ -1,0 +1,18 @@
+Jul 14, 2024 8:30:43 PM tools.descartes.dlim.httploadgenerator.generator.AbstractLoadGenerator executeLoadGenerator
+SEVERE: Couldn't create ServerSocket or accept director.
+java.net.BindException: Address already in use (Bind failed)
+	at java.net.PlainSocketImpl.socketBind(Native Method)
+	at java.net.AbstractPlainSocketImpl.bind(AbstractPlainSocketImpl.java:387)
+	at java.net.ServerSocket.bind(ServerSocket.java:390)
+	at java.net.ServerSocket.<init>(ServerSocket.java:252)
+	at java.net.ServerSocket.<init>(ServerSocket.java:143)
+	at tools.descartes.dlim.httploadgenerator.generator.AbstractLoadGenerator.executeLoadGenerator(AbstractLoadGenerator.java:86)
+	at tools.descartes.dlim.httploadgenerator.runner.cli.LoadGeneratorCommand.run(LoadGeneratorCommand.java:38)
+	at tools.descartes.dlim.httploadgenerator.runner.Main.main(Main.java:87)
+Jul 14, 2024 8:30:43 PM tools.descartes.dlim.httploadgenerator.generator.AbstractLoadGenerator acceptDirector
+INFO: Waiting for director.
+Exception in thread "main" java.lang.NullPointerException
+	at tools.descartes.dlim.httploadgenerator.generator.AbstractLoadGenerator.acceptDirector(AbstractLoadGenerator.java:125)
+	at tools.descartes.dlim.httploadgenerator.generator.AbstractLoadGenerator.executeLoadGenerator(AbstractLoadGenerator.java:93)
+	at tools.descartes.dlim.httploadgenerator.runner.cli.LoadGeneratorCommand.run(LoadGeneratorCommand.java:38)
+	at tools.descartes.dlim.httploadgenerator.runner.Main.main(Main.java:87)

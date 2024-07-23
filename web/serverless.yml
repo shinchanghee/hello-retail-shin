@@ -1,0 +1,246 @@
+org: changheeshin
+
+service: hello-retail-website
+
+plugins:
+  - ./.serverless_plugins/web-app-build-plugin.js
+
+custom:
+  bucketArn:
+    Fn::Join:
+      - ''
+      - - 'arn:aws:s3:::'
+        - Ref: HelloRetailWebBucket
+        - '/*'
+
+  cloudFrontDomainName:
+    Fn::GetAtt:
+      - HelloRetailWebDistribution
+      - DomainName
+
+  cloudFrontHostedZoneId: Z2FDTNDATAQYW2
+  domainName: hello-retail.biz
+  dnsHostName:
+    Fn::If:
+      - ProductionStage
+      - hello-retail.biz
+      - dev.hello-retail.biz
+
+  originDomainName:
+    Fn::Join:
+      - ''
+      - - ${custom.dnsHostName}
+        - '.s3.amazonaws.com'
+
+  originId:
+    Fn::Join:
+      - ''
+      - - 's3-'
+        - ${custom.dnsHostName}
+
+  retailStreamVersion: 1
+  eventWriterApiVersion: 1
+  productCatalogBuilderVersion: 1
+  productCatalogApiVersion: 1
+  s3Bucket:
+    Fn::Join:
+      - ''
+      - - 'S3://'
+        - Ref: HelloRetailWebBucket
+        - '/'
+
+  stage: dev
+  webAppBuild:
+    configPath: ./config.js
+    configValues:
+      ImageBucket: hello-retail.biz
+      WebAppName: Hello Retail
+      Stage: dev
+      AWSRegion: ap-northeast-2
+      SessionName: hello-retail-website-dev
+      WebAppRole: arn:aws:iam::${env:ACCOUNT_ID}:role/devHelloRetailWebIdentity
+      ProductCatalogTableName:
+        Fn::ImportValue: hello-retail-product-catalog-builder:dev:ProductCatalogTableName:1
+      ProductCategoryTableName:
+        Fn::ImportValue: hello-retail-product-catalog-builder:dev:ProductCategoryTableName:1
+      EventWriterApi:
+        Fn::ImportValue: hello-retail-event-writer-api:dev:EventWriterRestApi:1
+      ProductCatalogApi:
+        Fn::ImportValue: hello-retail-product-catalog-api:dev:ProductCatalogRestApi:1
+    webpackPath: ./webpack.config.js
+
+  exportWebApplicationIdentityArn: hello-retail-website:dev:WebApplicationIdentityArn
+  exportWebApplicationBucketName: hello-retail-website:dev:WebApplicationBucketName
+
+provider:
+  name: aws
+  region: ap-northeast-2
+  stage: dev
+
+resources:
+  Conditions:
+     ProductionStage: 
+       Fn::Equals:
+         - dev
+         - dev
+
+  Resources:
+
+    WebApplicationIdentity:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /
+        RoleName: devHelloRetailWebIdentity
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRole
+              Principal:
+                Service: lambda.amazonaws.com
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+          - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+          - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        Policies:   
+          - PolicyName: ReadFromProductCatalog
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                -  Effect: Allow
+                   Action:
+                     - 'dynamodb:Scan'
+                   Resource:
+                    Fn::ImportValue: hello-retail-product-catalog-builder:dev:ProductCategoryTableArn:1
+                -  Effect: Allow
+                   Action:
+                     - 'dynamodb:GetItem'
+                     - 'dynamodb:BatchGetItem'
+                     - 'dynamodb:Scan'
+                   Resource:
+                    Fn::ImportValue: hello-retail-product-catalog-builder:dev:ProductCatalogTableArn:1
+                -  Effect: Allow
+                   Action:
+                     - 'dynamodb:Query'
+                     - 'dynamodb:Scan'
+                   Resource:
+                    Fn::ImportValue: hello-retail-product-catalog-builder:dev:ProductCatalogTableCategoryIndexArn:1
+        
+    HelloRetailWebBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hello-retail.biz
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: error.html
+        CorsConfiguration:
+          CorsRules:
+            - AllowedMethods:
+                - GET
+                - HEAD
+                - PUT
+                - DELETE
+                - POST
+              AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"
+
+    HelloRetailWebBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: HelloRetailWebBucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS:
+                  - 'arn:aws:iam::${env:ACCOUNT_ID}:role/devHelloRetailWebIdentity'
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+              Resource: !Sub "arn:aws:s3:::hello-retail.biz/*"
+            - Effect: Allow
+              Principal: '*'
+              Action:
+                - s3:GetObject
+              Resource: !Sub "arn:aws:s3:::hello-retail.biz/*"
+
+            
+               
+
+
+#    HelloRetailWebBucketPolicy:
+#      Type: AWS::S3::BucketPolicy
+#      Properties:
+#       Bucket:
+#          Ref: HelloRetailWebBucket
+#       PolicyDocument:
+#          Statement:
+#            - Action:
+#                - s3:*
+#              Effect: Allow
+#              Resource: ${custom.bucketArn} 
+#              Principal: '*'
+#            - Action:
+#                - s3:*
+#              Effect: Allow
+#              Resource: ${custom.bucketArn}
+#              Principal:
+                #                AWS:
+                #                  - 'arn:aws:iam::${env:ACCOUNT_ID}:role/devHelloRetailWebIdentity'    
+                #      DependsOn:
+                #        - HelloRetailWebBucket
+    MyOriginAccessIdentity:
+      Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+      Properties:
+        CloudFrontOriginAccessIdentityConfig:
+          Comment: "Access identity for S3 bucket"
+
+    HelloRetailWebDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - Id: ${custom.originId}
+              DomainName: hello-retail.biz.s3.amazonaws.com
+              S3OriginConfig:
+                OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${MyOriginAccessIdentity}"
+          Enabled: true
+          CustomErrorResponses:
+            - ErrorCode: 403
+              ResponseCode: 200
+              ResponsePagePath: /error.html
+          DefaultRootObject: index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - GET
+              - HEAD
+            DefaultTTL: 0
+            MinTTL: 0
+            MaxTTL: 0
+            TargetOriginId: ${custom.originId}
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: allow-all
+      DependsOn:
+        - HelloRetailWebBucket
+
+  Outputs:
+    WebApplicationIdentityArn:
+      Description: The Role ARN for the Web Application identity
+      Value:
+        Fn::GetAtt: [ WebApplicationIdentity, Arn ]
+      Export:
+        Name: hello-retail-website:dev:WebApplicationIdentityArn
+    WebApplicationBucketName:
+      Description: The S3 Bucket ARN used to host Web Application
+      Value:
+        Ref: HelloRetailWebBucket
+      Export:
+        Name: hello-retail-website:dev:WebApplicationBucketName
+

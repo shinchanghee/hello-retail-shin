@@ -1,0 +1,16 @@
+{
+  "name": "hello-retail-product-photos-success",
+  "version": "0.0.1",
+  "description": "Photo acquirement success handler.",
+  "main": "success.js",
+  "scripts": {},
+  "author": "Nordstrom",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Nordstrom/hello-retail/issues"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1659.0",
+    "uuid": "^8.1.0"
+  }
+}
