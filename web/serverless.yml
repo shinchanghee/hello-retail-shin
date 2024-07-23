@@ -130,6 +130,11 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: hello-retail.biz
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
         WebsiteConfiguration:
           IndexDocument: index.html
           ErrorDocument: error.html
