@@ -35,9 +35,6 @@ functions:
     role:
       Fn::GetAtt: [ EventWriter, Arn ]
     handler: eventWriterApi.eventWriter
-    environment:
-      STREAM_NAME:
-        Fn::ImportValue: hello-retail-stream:dev:RetailStreamName:1
     events:
       - http:
           path: event-writer
@@ -104,20 +101,11 @@ resources:
                       - ':'
                       - - Fn::GetAtt: [ EventWriterLogGroup, Arn ]
                         - '*'
-          - PolicyName: WriteToKinesis
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - 'kinesis:PutRecord'
-                  Resource:
-                    Fn::ImportValue: hello-retail-stream:dev:RetailStreamArn:1
-
+          
   Outputs:
     EventWriterRestApi:
       Description: API used to submit producer events to the Kinesis Stream
-      Value: 'vub3sklq13'
+      Value: 'mefv00led2'
       Export:
         Name: hello-retail-event-writer-api:dev:EventWriterRestApi:1
 

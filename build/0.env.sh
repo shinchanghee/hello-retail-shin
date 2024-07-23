@@ -1,7 +1,12 @@
 #!/bin/sh
 
 MSG="You must set the COMPANY, TEAM, REGION, STAGE environment variables"
-
+REGION=ap-northeast-2
+COMPANY=cclab
+TEAM=cclab
+STAGE=dev
+ACCOUNT_ID=590183717745
+MEMORY_SIZE=512
 fail=0
 failMsg=""
 check()

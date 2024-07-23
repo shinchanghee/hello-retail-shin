@@ -32,12 +32,13 @@ functions:
         'Fn::ImportValue': hello-retail-product-photos-process:dev:PhotoAssignmentsStepFunctionArn:1
       TABLE_PHOTO_REGISTRATIONS_NAME:
         'Fn::ImportValue': hello-retail-product-photos-data:dev:PhotoRegistrationsTableName:1
-      PRODUCT_CATALOG_TABLE_ARN: arn:aws:dynamodb:ap-northeast-2:590183717745:table/dev-ProductCatalog-1/stream/2024-07-22T09:29:26.799
-        
+      PRODUCT_CATALOG_TABLE_ARN: 
+        'Fn::ImportValue': hello-retail-product-catalog-builder:dev:ProductCatalogTableStreamArn:1
     events:
       - stream:
           type: dynamodb
-          arn: arn:aws:dynamodb:ap-northeast-2:590183717745:table/dev-ProductCatalog-1/stream/2024-07-22T09:29:26.799
+          arn: 
+            'Fn::ImportValue': hello-retail-product-catalog-builder:dev:ProductCatalogTableStreamArn:1
             
           
 

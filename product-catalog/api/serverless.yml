@@ -173,7 +173,7 @@ resources:
   Outputs:
     ProductCatalogRestApi:
       Description: 'API used to access the product and category catalog in DynamoDB'
-      Value: 'b8jblsb5t2'
+      Value: 'ttrc4bf4ba'
        
       Export:
         Name: hello-retail-product-catalog-api:dev:ProductCatalogRestApi:1

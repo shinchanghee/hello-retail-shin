@@ -26,10 +26,6 @@ functions:
       'Fn::GetAtt': [ ReportRole, Arn ]
     handler: report.handler
     environment:
-      RETAIL_STREAM_NAME:
-        Fn::ImportValue: hello-retail-stream:dev:RetailStreamName:1
-      RETAIL_STREAM_WRITER_ARN:
-        Fn::ImportValue: hello-retail-stream:dev:RetailStreamWriterArn:1
       TABLE_PHOTO_REGISTRATIONS_NAME:
         Fn::ImportValue: hello-retail-product-photos-data:dev:PhotoRegistrationsTableName:1
       TABLE_PHOTO_ASSIGNMENTS_NAME:
@@ -91,15 +87,7 @@ resources:
                         - '*'
           - ${file(./../productPhotos.yml):updatePhotoRegistrations}
           - ${file(./../productPhotos.yml):deletePhotoAssignment}
-          - PolicyName: WriteToRetailStream
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - 'kinesis:PutRecord'
-                  Resource:
-                    'Fn::ImportValue': hello-retail-stream:dev:RetailStreamArn:1
+          
   Outputs:
     ReportLambdaName:
       Description: The Name of the Photo Assignments Report Lambda

@@ -1,8 +1,9 @@
-export COMPANY=$3
-export TEAM=$4
-export REGION=$1
-export STAGE=$2
-export ACCOUNT_ID=`aws sts get-caller-identity --query Account --output text`
+export REGION=ap-northeast-2
+export COMPANY=cclab
+export TEAM=cclab
+export STAGE=dev
+export ACCOUNT_ID=590183717745
+export MEMORY_SIZE=512
 echo $ACCOUNT_ID
 
 # change default bucket name

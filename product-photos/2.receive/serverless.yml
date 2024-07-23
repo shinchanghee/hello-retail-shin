@@ -108,6 +108,7 @@ resources:
                   Action:
                     - 'states:SendTaskSuccess'
                   Resource: arn:aws:states:ap-northeast-2:${env:ACCOUNT_ID}:activity:dev-hello-retail-product-photos-receive
+  
   Outputs:
     ReceiveLambdaName:
       Description: The Name of the Photo Assignments Receive Lambda
