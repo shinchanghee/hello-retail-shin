@@ -4,7 +4,7 @@ module.exports = {
   output: {
     path: `${__dirname}/app/`,
     filename: 'bundle.js',
-    publicPath: 'https://localhost:7705/',
+    publicPath: 'https://localhost:7706/',
   },
   module: {
     loaders: [
@@ -33,7 +33,7 @@ module.exports = {
   devServer: {
     hot: true,
     inline: true,
-    port: 7705,
+    port: 7706,
     historyApiFallback: true,
   },
 }

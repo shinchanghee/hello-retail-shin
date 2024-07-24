@@ -58,7 +58,7 @@ class NewProductPage extends Component {
 
   createProduct() {
     const product = this.state
-
+    this.state.id = (`0000000${Math.floor(Math.abs(Math.random() * 10000000))}`).substr(-7)
     // Disable "Add Product" button while request is in flight
     this.setState({
       isProductValid: false,
@@ -66,7 +66,7 @@ class NewProductPage extends Component {
 
     util.makeApiRequest(config.EventWriterApi, 'POST', '/event-writer/', {
       schema: 'com.nordstrom/product/create/1-0-0',
-      id: (`0000000${Math.floor(Math.abs(Math.random() * 10000000))}`).substr(-7),
+      id: this.state.id,
       origin: `hello-retail/web-client-create-product/dummy_id/dummy_name`,
       category: product.category.trim(),
       name: product.name.trim(),
@@ -103,6 +103,7 @@ class NewProductPage extends Component {
       return (
         <div>
           <h2>Product {this.state.name} has been created!</h2>
+          <h3>Id : {this.state.id}</h3>
           <button onClick={this.ackCreateProduct}>Add More</button>
         </div>
       )
